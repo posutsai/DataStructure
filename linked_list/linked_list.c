@@ -82,7 +82,7 @@ void clean(linked_list_t *q) {
 	}
 	list_el_t *cur = NULL;
 	list_el_t *n = NULL;
-	traverse_to_pre_node_safe(q->head, cur, n, q->size) {
+	traverse_to_pre_node_safe(q->head, cur, n, q->size - 1) {
 		free(cur);
 	}
 	free(n);
@@ -105,18 +105,21 @@ bool unshift(linked_list *q, int value) {
 }
 
 bool push(linked_list *q, int value) {
+	if (q == NULL)
+		return false;
 	// insert tail
 	list_el_t *node = (list_el_t *)malloc(sizeof(list_el_t));
 	if (node == NULL)
 		return false;
 	list_el_t *prev_tail = q->tail;
 	q->tail = node;
-	if (!q->size)
+	q->size++;
+	if (q->size == 1)
 		q->head = node;
-	prev_tail->next = node;
+	else
+		prev_tail->next = node;
 	node->next = NULL;
 	node->value = value;
-	q->size++;
 	return true;
 }
 
@@ -143,13 +146,12 @@ bool pop(linked_list_t *q, int *value) {
 		return false;
 	if (q->size == 1)
 		return shift(q, value);
+	q->size--;
 	list_el_t *cur = NULL;
 	list_el_t *n = NULL;
-	traverse_to_pre_node_safe(q->head, cur, n, q->size-1);
+	traverse_to_pre_node_safe(q->head, cur, n, q->size - 1);
 	q->tail = cur;
 	*value = n->value;
-	free(n);
 	cur->next = NULL;
-	q->size--;
-	return true;
+	free(n);
 }

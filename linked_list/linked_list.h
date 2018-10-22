@@ -10,7 +10,7 @@
 #define traverse_to_pre_node_safe(head, cur, n, index)		\
 	int macro_i = 0;										\
 	for (macro_i = 0, cur = (head), n = cur->next;			\
-		 macro_i < index - 1;								\
+		 macro_i < index;									\
 		 macro_i++, cur = n, n = cur->next)					\
 
 // be aware of variable name in condition. Don't use

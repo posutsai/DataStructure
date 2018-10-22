@@ -6,6 +6,20 @@
 #include "gtest/gtest.h"
 #include "linked_list.h"
 
+void show_q(linked_list_t *q) {
+	list_el_t *cur;
+	int i = 0;
+	for(cur = q->head; i < q->size ; cur = cur->next, i++) {
+		printf("[ %10d %s %s ] -> ", cur->value, q->head == cur? "HEAD": "", q->tail == cur? "TAIL": "");
+	}
+	printf("end\n");
+}
+
+#define match_el(ground_truth, q) {									\
+	list_el_t *cur = q->head;										\
+	for (int i = 0; i < ground_truth.size(); i++, cur=cur->next)	\
+		EXPECT_EQ(cur->value, ground_truth.at(i));					\
+}
 
 TEST(LinkedListTest, Creation) {
 	linked_list_t *q = create();
@@ -38,7 +52,7 @@ class LinkedListSqTest: public testing::Test {
 			q = create();
 		}
 		void TearDown() {
-			clean(q);
+			//clean(q);
 			time_t end_time = time(nullptr);
 			EXPECT_TRUE(end_time - start_time <= 10) << "the test spend more than 10 seconds";
 		}
@@ -48,7 +62,6 @@ class LinkedListSqTest: public testing::Test {
 };
 
 TEST_F(LinkedListSqTest, RandomUnshiftShift) {
-	int ops[] = {0, 0, 1, 1};
 	for (int n_op = 0; n_op < 10000; n_op++) {
 		int operation = rand() % 2;
 		switch (operation) {
@@ -59,6 +72,8 @@ TEST_F(LinkedListSqTest, RandomUnshiftShift) {
 				EXPECT_EQ(q->tail->next, nullptr);
 				EXPECT_EQ(q->head->value, val);
 				ground_truth.push_front(val);
+				EXPECT_EQ(ground_truth.size(), q->size);
+				match_el(ground_truth, q);
 				break;
 			}
 			case 1: {
@@ -75,8 +90,40 @@ TEST_F(LinkedListSqTest, RandomUnshiftShift) {
 			}
 		}
 	}
-
 }
+
+TEST_F(LinkedListSqTest, RandomPushPop) {
+	for (int n_op = 0; n_op < 10000; n_op++) {
+		int operation = rand() % 2;
+		switch (operation) {
+			case 0: {
+				int val = random();
+				bool r =  push(q, val);
+				EXPECT_TRUE(r);
+				EXPECT_EQ(q->tail->next, nullptr);
+				ground_truth.push_back(val);
+				EXPECT_EQ(ground_truth.size(), q->size);
+				match_el(ground_truth, q);
+				break;
+			}
+			case 1: {
+				int val = 0;
+				bool r = pop(q, &val);
+				if (ground_truth.size() == 0) {
+					EXPECT_FALSE(r);
+				}
+				else {
+					EXPECT_EQ(ground_truth.back(), val);
+					ground_truth.pop_back();
+					EXPECT_EQ(ground_truth.size(), q->size);
+					match_el(ground_truth, q);
+				}
+				break;
+			}
+		}
+	}
+}
+
 
 int main(int argc, char** argv) {
 	srand(time(NULL));
