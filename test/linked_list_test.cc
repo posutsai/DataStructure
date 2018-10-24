@@ -124,6 +124,45 @@ TEST_F(LinkedListSqTest, RandomPushPop) {
 	}
 }
 
+TEST_F(LinkedListSqTest, RandomInsertDel) {
+	for (int n_op = 0; n_op < 10000; n_op++) {
+		int operation = rand() % 2;
+		switch (operation) {
+			case 0: {
+				int val = random() % 100;
+				int index = random() % 3;
+				if (0 <= index && index <= q->size) {
+					// legal input
+					bool r = insert(q, index, val);
+					EXPECT_TRUE(r);
+					ground_truth.insert(ground_truth.begin() + index, val);
+					EXPECT_EQ(ground_truth.size(), q->size);
+					match_el(ground_truth, q);
+				} else {
+					bool r = insert(q, index, val);
+					EXPECT_FALSE(r);
+				}
+				break;
+			}
+			case 1: {
+				int val = 0;
+				int index = random() % 100;
+				bool r = del(q, index, &val);
+				if (0 <= index && index < ground_truth.size()) {
+					// legal deletion
+					EXPECT_TRUE(r);
+					EXPECT_EQ(ground_truth.at(index), val);
+					ground_truth.erase(ground_truth.begin() + index);
+					EXPECT_EQ(ground_truth.size(), q->size);
+					match_el(ground_truth, q);
+				}
+				else {
+					EXPECT_FALSE(r);
+				}
+			}
+		}
+	}
+}
 
 int main(int argc, char** argv) {
 	srand(time(NULL));

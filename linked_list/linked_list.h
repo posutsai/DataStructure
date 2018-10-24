@@ -30,7 +30,7 @@ typedef struct linked_list {
 	list_el_t *head;
 	list_el_t *tail;
 	unsigned int size;
-}linked_list_t;
+} linked_list_t;
 
 linked_list_t *create();
 bool insert(linked_list_t *, int index, int value);

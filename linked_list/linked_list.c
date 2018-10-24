@@ -23,12 +23,14 @@ bool insert(linked_list_t *q, int index, int value) {
 	// insert to the specific index (1 ~ size-1)
 	list_el_t *cur = NULL;
 	list_el_t *n = NULL;
-	traverse_to_pre_node_safe(q->head, cur, n, index);
+	traverse_to_pre_node_safe(q->head, cur, n, index-1);
 	list_el_t *node = (list_el_t *)malloc(sizeof(list_el_t));
 	if (node == NULL)
 		return false;
+	node->value = value;
 	cur->next = node;
 	node->next = n;
+	q->size++;
 	return true;
 }
 
@@ -44,9 +46,11 @@ bool del(linked_list_t *q, int index, int *val) {
 
 	list_el_t *cur = NULL;
 	list_el_t *n = NULL;
-	traverse_to_pre_node_safe(q->head, cur, n, index);
+	traverse_to_pre_node_safe(q->head, cur, n, index-1);
 	cur->next = n->next;
-	*val = cur->value;
+	*val = n->value;
+	free(n);
+	q->size--;
 	return true;
 }
 
@@ -154,4 +158,5 @@ bool pop(linked_list_t *q, int *value) {
 	*value = n->value;
 	cur->next = NULL;
 	free(n);
+	return true;
 }
