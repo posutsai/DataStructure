@@ -91,10 +91,6 @@ void adjust(btree_t *btree, node_t *cur, int val, int splitted_index, node_t *le
 	memmove(temp + i + 1, temp + i, sizeof(int) * (ORDER - 1 - i));
 	temp[i] = val;
 	int val_passed_up = temp[(ORDER - 1) / 2];
-	printf("temp is [ ");
-	for (int j = 0; j < ORDER ;j++)
-		printf("%d%s ", temp[j], j == ORDER -1? "": ",");
-	printf(" ]\n");
 	node_t *parent = cur->parent;
 
 
@@ -133,7 +129,6 @@ void adjust(btree_t *btree, node_t *cur, int val, int splitted_index, node_t *le
 		}
 	}
 	free(cur);
-	printf("pass %d up\n", val_passed_up);
 	return adjust(btree, parent, val_passed_up, index, split_left, split_right);
 }
 
@@ -157,7 +152,6 @@ bool insert(btree_t *btree, int val) {
 		cur = which_node(cur, val);
 		if (cur->n_keys == ORDER - 1) {
 			// the node is full
-			printf("split!!!\n");
 			adjust(btree, cur, val, cur->i_parent, NULL, NULL);
 			return true;
 		} else {
@@ -172,23 +166,115 @@ bool insert(btree_t *btree, int val) {
 	}
 }
 
+bool has_rich_sibling(node_t *cur, int *index) {
+	// search if there is any sibling is rich, maybe optimize in further version
+	node_t *parent = cur->parent;
+	if (parent == NULL)
+		return false;
+	int nearest = parent->n_children;
+	for (int i = 0; i < parent->n_children; i++) {
+		if (parent->children[i]->n_keys - 1 >= ceil(ORDER / 2) - 1) {
+			nearest = abs(i - cur->i_parent) < nearest? i: nearest;
+		}
+	}
+	*index = nearest;
+	return nearest == parent->n_children? false: true;
+}
+
+bool del(btree_t *btree, int val) {
+	node_t *cur = btree->root;
+	int i = 0;
+	do {
+		for (i = 0; val > cur->keys[i] && i < cur->n_keys; i++);
+		if (val == cur->keys[i])
+			break;
+		cur = cur->children[i];
+	} while(cur->n_children > 0);
+
+	printf("found node : \n");
+	show_node(cur);
+	printf("\n");
+
+	int is_find = -1;
+	for (i = 0; i < cur->n_keys; ++i) {
+		is_find = cur->keys[i] == val ? i: is_find;
+	}
+	if (is_find == -1)
+		return false;
+	if (!cur->n_children) {
+		if (cur->n_keys - 1 >= ceil(ORDER / 2) - 1) {
+			// required key is in a richleaf
+			memmove(cur->keys + is_find, cur->keys + is_find + 1, sizeof(int) * (ORDER - 2 - is_find));
+			cur->n_keys--;
+			return true;
+		}
+
+		int sib;
+		if (has_rich_sibling(cur, &sib)) {
+			// rich sibling exist
+			node_t *parent = cur->parent;
+			if (sib < cur->i_parent) {
+				for (; sib < cur->i_parent; sib++) {
+					node_t *start = parent->children[sib];
+					node_t *end = parent->children[sib + 1];
+					int passed_up = start->keys[start->n_keys - 1];
+					start->n_keys--;
+					int passed_down = parent->keys[sib];
+					parent->keys[sib] = passed_up;
+					memmove(end->keys + 1, end->keys, sizeof(int) * end->n_keys);
+					end->keys[0] = passed_down;
+					end->n_keys++;
+				}
+				is_find++;
+				memmove(cur->keys + is_find, cur->keys + is_find + 1, sizeof(int) * (ORDER - 2 - is_find));
+				cur->n_keys--;
+			} else {
+				for (; sib > cur->i_parent; sib--) {
+					node_t *start = parent->children[sib];
+					node_t *end = parent->children[sib - 1];
+					int passed_up = start->keys[0];
+					memmove(start->keys, start->keys + 1, (start->n_keys - 1) * sizeof(int));
+					start->n_keys--;
+					int passed_down = parent->keys[sib - 1];
+					printf("pass %d down, sib is %d\n", passed_down, sib);
+					parent->keys[sib - 1] = passed_up;
+					end->keys[end->n_keys] = passed_down;
+					end->n_keys++;
+				}
+				memmove(cur->keys + is_find, cur->keys + is_find + 1, sizeof(int) * (ORDER - 2 - is_find));
+				cur->n_keys--;
+			}
+			printf("found sibling index is %d\n", sib);
+			return true;
+		}
+		printf("no rich sibling\n");
+		return true;
+
+			// right brother node is rich
+			memmove(cur->keys + is_find, cur->keys + is_find + 1, sizeof(int) * (ORDER - 2 - is_find));
+			cur->keys[cur->n_keys - 1] = cur->parent->keys[0];
+
+			// switch to its parent
+			node_t *parent = cur->parent;
+			memmove(parent->keys + cur->i_parent, parent->keys + cur->i_parent + 1, (parent->n_keys - cur->i_parent - 1) * sizeof(int));
+			parent->keys[parent->n_keys - 1] = parent->children[cur->i_parent + 1]->keys[0];
+
+			node_t *bro = parent->children[cur->i_parent + 1];
+			memmove(bro->keys, bro->keys + 1, (bro->n_keys - 1) * sizeof(int));
+			bro->n_keys--;
+
+	}
+
+}
+
 int main(int argc, char *argv[]) {
 	btree_t *btree = create_btree();
 	for (int i = atoi(argv[1]); i > 0; i--)
 		insert(btree, i);
-	/* insert(btree, 13); */
-	/* insert(btree, 12); */
-	/* insert(btree, 11); */
-	/* insert(btree, 10); */
-	/* insert(btree, 9); */
-	/* insert(btree, 8); */
-	/* insert(btree, 7); */
-	/* insert(btree, 6); */
-	/* insert(btree, 5); */
-	/* insert(btree, 4); */
-	/* insert(btree, 3); */
-	/* insert(btree, 2); */
-	/* insert(btree, 1); */
+	del(btree, 20);
+	del(btree, 19);
+	del(btree, 18);
+	printf("=======================================\n");
 	show_tree(btree);
 	return 0;
 }
